@@ -33,14 +33,30 @@ export function agentFor(playbook, catalog) {
   return agent;
 }
 
+/** Placeholder names: a lowercase start, then letters (for example {hoursPerDay}). */
+export const PLACEHOLDER = /\{([a-z][A-Za-z]*)\}/g;
+
+/** The standard questions a playbook asks. Channel is always asked. Experience is asked when the
+ * prompt uses it, and frequency when the playbook has a schedule (defaultFrequency is null for on demand).
+ * @param {Playbook} playbook @returns {('experience' | 'frequency' | 'channel')[]} */
+export function standardFields(playbook) {
+  /** @type {('experience' | 'frequency' | 'channel')[]} */
+  const fields = [];
+  if (playbook.prompt.includes('{experience}')) fields.push('experience');
+  if (playbook.defaultFrequency !== null) fields.push('frequency');
+  fields.push('channel');
+  return fields;
+}
+
 /** @param {Playbook} playbook @param {Catalog} catalog @returns {Answers} */
 export function defaultsFor(playbook, catalog) {
-  return Object.fromEntries([
-    ['experience', catalog.experiences[0].value],
-    ['frequency', playbook.defaultFrequency],
-    ['channel', agentFor(playbook, catalog).channels[0].value],
-    ...playbook.questions.map(({ key }) => [key, '']),
-  ]);
+  const fields = standardFields(playbook);
+  /** @type {[string, string][]} */
+  const standard = [];
+  if (fields.includes('experience')) standard.push(['experience', catalog.experiences[0].value]);
+  if (playbook.defaultFrequency !== null) standard.push(['frequency', playbook.defaultFrequency]);
+  standard.push(['channel', agentFor(playbook, catalog).channels[0].value]);
+  return Object.fromEntries([...standard, ...playbook.questions.map(({ key }) => [key, ''])]);
 }
 
 /** @param {string} hash @returns {import('./types').Route} */
@@ -59,8 +75,10 @@ export function parseRoute(hash) {
 export function readAnswers(playbook, catalog, params) {
   const answers = defaultsFor(playbook, catalog);
   let repaired = false;
-  const choices = { experience: catalog.experiences, frequency: catalog.frequencies, channel: agentFor(playbook, catalog).channels };
-  for (const [key, options] of Object.entries(choices)) {
+  /** @type {Record<string, import('./types').Choice[]>} */
+  const all = { experience: catalog.experiences, frequency: catalog.frequencies, channel: agentFor(playbook, catalog).channels };
+  for (const key of standardFields(playbook)) {
+    const options = all[key];
     const value = params.get(key);
     if (value !== null) {
       if (options.some((option) => option.value === value)) answers[key] = value;
@@ -100,7 +118,7 @@ export function validateAnswers(playbook, answers) {
 /** Replacement is literal and single-pass, including user-supplied braces and dollar signs.
  * @param {string} template @param {Answers} answers */
 export function fillTemplate(template, answers) {
-  return template.replace(/\{([a-z]+)\}/g, (_, key) => {
+  return template.replace(PLACEHOLDER, (_, key) => {
     if (!Object.hasOwn(answers, key) || !answers[key].trim()) throw new Error(`Missing answer: ${key}`);
     return answers[key].trim();
   });

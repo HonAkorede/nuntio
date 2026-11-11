@@ -21,7 +21,8 @@ export interface Playbook {
   agentId: string;
   keywords: string[];
   deliverables: string[];
-  defaultFrequency: string;
+  /** null means on demand: no frequency question and no {frequency} placeholder. */
+  defaultFrequency: string | null;
   questions: Question[];
   prompt: string;
   schedule: string;
@@ -40,6 +41,11 @@ export interface Catalog {
   playbooks: Playbook[];
 }
 export type Answers = Record<string, string>;
+export interface Roadmap {
+  version: number;
+  groups: { id: string; title: string; icon: string; items: { title: string; text: string }[] }[];
+  disclaimer: string;
+}
 export interface Route { view: string; params: URLSearchParams; malformed: boolean }
 export interface SetupGuide {
   id: string;

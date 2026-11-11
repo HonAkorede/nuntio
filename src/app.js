@@ -1,8 +1,10 @@
 import rawCatalog from './data/playbooks.json';
 import rawGuides from './data/guides.json';
+import rawChains from './data/chains.json';
+import rawRoadmap from './data/roadmap.json';
 import { createGuidePrompt, guideDate } from './guide-model.js';
 import { createScanView } from './scan-view.js';
-import { agentFor, answerHash, createOutputs, defaultsFor, escapeHTML as esc, fillTemplate, matchPlaybooks, parseRoute, readAnswers, validateAnswers } from './model.js';
+import { agentFor, answerHash, standardFields, createOutputs, defaultsFor, escapeHTML as esc, fillTemplate, matchPlaybooks, parseRoute, readAnswers, validateAnswers } from './model.js';
 
 /** @typedef {import('./types').Playbook} Playbook */
 /** @typedef {import('./types').Answers} Answers */
@@ -11,6 +13,8 @@ import { agentFor, answerHash, createOutputs, defaultsFor, escapeHTML as esc, fi
 const catalog = rawCatalog;
 /** @type {import('./types').GuideCatalog} */
 const guideCatalog = rawGuides;
+/** @type {import('./types').Roadmap} */
+const roadmap = rawRoadmap;
 const root = document.body.dataset.root || './';
 const pageId = document.body.dataset.playbook || '';
 const guideId = document.body.dataset.guide || '';
@@ -121,15 +125,27 @@ function roadmapItem(title, text, href = '', linkText = '', mark = 'check') {
   return `<li>${icon(mark)}<div><h3>${esc(title)}</h3><p>${esc(text)}</p>${href ? `<a href="${href}">${esc(linkText)} ${icon('arrow')}</a>` : ''}</div></li>`;
 }
 
+/** @param {string[]} names */
+function listNames(names) {
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+}
+
+/** Live is built from what exists in the catalogs, so it can only list real features.
+ * Next, Later and Exploring come from src/data/roadmap.json. */
 function renderRoadmap() {
   document.title = 'Roadmap | nuntio';
-  const perps = catalog.playbooks.find(({ id }) => id === 'perps-funding-digest');
-  const addedPlaybooks = ['new-launch-radar', 'tokenized-stock-watch', 'unlock-and-airdrop-tracker', 'project-research-brief', 'crypto-creator-thread-writer'];
-  const livePlaybooks = catalog.playbooks.filter(({ id }) => addedPlaybooks.includes(id));
+  const chains = listNames(rawChains.chains.map(({ label }) => label));
+  const providers = listNames(guideCatalog.guides.map(({ title }) => title.replace(/ Agentic Wallet$/, '')));
+  const live = [
+    roadmapItem('Scan tab', `Read a token or wallet on ${chains}, then copy a research prompt.`, homeHref('/scan'), 'Scan an address'),
+    roadmapItem('Setup guides', `Set up a ${providers} agentic wallet with your agent, one approved step at a time.`, homeHref('/guides'), 'Browse setup guides'),
+    ...catalog.playbooks.map((playbook) => roadmapItem(playbook.title, playbook.description, playbookHref(playbook), `Build ${playbook.title.split(' ').map((word) => (word.length === 1 ? word : word.toLowerCase())).join(' ')}`)),
+  ].join('');
+  const planned = roadmap.groups.map((group) => `<section aria-labelledby="${esc(group.id)}-heading"><h2 id="${esc(group.id)}-heading">${esc(group.title)}</h2><ul class="roadmap-list roadmap-plain">${group.items.map((item) => roadmapItem(item.title, item.text, '', '', group.icon)).join('')}</ul></section>`).join('');
   app.innerHTML = `<div class="wrap roadmap"><h1 id="page-title" tabindex="-1">A clearer next step.</h1><p class="guide-intro">What is live in nuntio, what comes next, and what we are still exploring.</p>
-    <section aria-labelledby="live-heading"><h2 id="live-heading">Live</h2><ul class="roadmap-list">${roadmapItem('Scan tab', 'Read a token or wallet on Ethereum, Base, BNB Chain, Robinhood Chain or Solana, then copy a research prompt.', homeHref('/scan'), 'Scan an address')}${roadmapItem('Perps funding digest', 'A daily morning digest of funding, open interest and liquidations for your markets.', perps ? playbookHref(perps) : homeHref(), 'Build the digest')}${roadmapItem('Coinbase and OKX guides', 'Set up an agentic wallet with your agent, one approved step at a time. The Binance guide is here too.', homeHref('/guides'), 'Browse setup guides')}${livePlaybooks.map((playbook) => roadmapItem(playbook.title, playbook.description, playbookHref(playbook), `Build ${playbook.title.toLowerCase()}`)).join('')}</ul></section>
-    <section aria-labelledby="next-heading"><h2 id="next-heading">Next</h2><ul class="roadmap-list roadmap-plain">${roadmapItem('nuntio data engine', 'Our own data engine for deeper token and wallet checks.', '', '', 'clock')}${roadmapItem('Creator submissions', 'Submit playbooks for the library.', '', '', 'clock')}</ul></section>
-    <section aria-labelledby="exploring-heading"><h2 id="exploring-heading">Exploring</h2><ul class="roadmap-list roadmap-plain">${roadmapItem('nuntio token and paid playbooks', 'An idea under consideration. Nothing is launched or for sale.', '', '', 'radar')}</ul></section>
+    <section aria-labelledby="live-heading"><h2 id="live-heading">Live</h2><ul class="roadmap-list">${live}</ul></section>
+    ${planned}
+    <p class="small muted roadmap-disclaimer">${esc(roadmap.disclaimer)}</p>
     <a class="back-link" href="${esc(guideCatalog.reportUrl)}" target="_blank" rel="noopener noreferrer">Report a broken step ${icon('external')}<span class="sr-only"> (opens in new tab)</span></a></div>`;
 }
 
@@ -215,9 +231,10 @@ function selectField(key, label, choices, selected, hint = '') {
 function renderConfigure(playbook, answers, repaired) {
   const agent = agentFor(playbook, catalog);
   const channel = agent.channels.find(({ value }) => value === answers.channel) || agent.channels[0];
+  const asks = standardFields(playbook);
   document.title = `${playbook.title} | nuntio`;
   app.innerHTML = `<div class="wrap detail">${pageHeading(playbook, 1)}${repaired ? '<p class="state-notice" role="alert">Some saved answers could not be read. Review your answers before generating.</p>' : ''}<div class="builder-layout"><form id="playbook-form" novalidate>
-    <fieldset><legend>The basics</legend><fieldset class="experience-field"><legend>Your experience level</legend><div class="segmented">${catalog.experiences.map(({ value, label }) => `<label><input type="radio" name="experience" value="${esc(value)}" ${answers.experience === value ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('')}</div></fieldset><div class="field-row">${selectField('frequency', 'How often should it update you?', catalog.frequencies, answers.frequency)}${selectField('channel', 'Where should it send updates?', agent.channels, answers.channel)}</div><p class="field-hint channel-hint" id="channel-hint">${esc(channel.hint || '')} <a href="${esc(agent.appsUrl)}" target="_blank" rel="noopener noreferrer">Check delivery requirements<span class="sr-only"> (opens in new tab)</span></a></p></fieldset>
+    <fieldset><legend>The basics</legend>${asks.includes('experience') ? `<fieldset class="experience-field"><legend>Your experience level</legend><div class="segmented">${catalog.experiences.map(({ value, label }) => `<label><input type="radio" name="experience" value="${esc(value)}" ${answers.experience === value ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('')}</div></fieldset>` : ''}<div class="field-row">${asks.includes('frequency') ? selectField('frequency', 'How often should it update you?', catalog.frequencies, answers.frequency) : ''}${selectField('channel', 'Where should it send updates?', agent.channels, answers.channel)}</div><p class="field-hint channel-hint" id="channel-hint">${esc(channel.hint || '')} <a href="${esc(agent.appsUrl)}" target="_blank" rel="noopener noreferrer">Check delivery requirements<span class="sr-only"> (opens in new tab)</span></a></p></fieldset>
     <fieldset><legend>Make it yours</legend>${playbook.questions.map((question) => `<div class="field"><label for="${question.key}">${esc(question.label)}</label><input type="text" id="${question.key}" name="${question.key}" value="${esc(answers[question.key])}" placeholder="${esc(question.placeholder)}" required maxlength="${question.maxLength}" aria-describedby="${question.key}-hint ${question.key}-error" autocomplete="off"><p class="field-hint" id="${question.key}-hint">${esc(question.hint)}</p><p class="field-error" id="${question.key}-error" hidden></p></div>`).join('')}</fieldset>
     <p class="privacy-note">Your answers stay in this link. Anyone you share it with can read them. Keep personal details and secrets out.</p><div class="form-actions"><button class="button primary" type="submit">Generate playbook ${icon('arrow')}</button><button class="button text-button" type="button" id="reset-answers">Reset answers</button></div>
     <div id="copy-fallback" class="manual-copy" hidden><label for="manual-copy">Copy manually</label><p>Automatic copying is unavailable in this browser. Select and copy the text below.</p><textarea id="manual-copy" rows="6" readonly></textarea></div>
@@ -262,7 +279,7 @@ function renderConfigure(playbook, answers, repaired) {
   document.querySelector('#reset-answers')?.addEventListener('click', () => {
     history.replaceState(null, '', answerHash('/configure', defaultsFor(playbook, catalog)));
     renderConfigure(playbook, defaultsFor(playbook, catalog), false);
-    /** @type {HTMLElement} */ (document.querySelector('input[name="experience"]')).focus();
+    /** @type {HTMLElement} */ (document.querySelector('#playbook-form input, #playbook-form select')).focus();
     announce('Answers reset.');
   });
   persist();
@@ -315,7 +332,7 @@ function renderOutput(playbook, answers) {
   app.innerHTML = `<div class="wrap detail output-page">${pageHeading(playbook, 2)}<div class="output-actions"><a class="button secondary" href="${answerHash('/configure', answers)}">${icon('back')} Edit answers</a><button class="button secondary" id="share-link" type="button">${icon('link')} Copy share link</button><p class="small muted">The link includes your answers.</p></div>
     ${creatorInfo(playbook)}<div class="output-layout"><div class="output-blocks">
       <section class="output-block" aria-labelledby="prompt-heading"><div class="block-heading"><h2 id="prompt-heading"><span class="block-number">01</span> Setup prompt</h2><button class="button copy-button" type="button" data-copy="prompt" aria-label="Copy setup prompt">${icon('copy')} Copy</button></div><p class="block-instruction">Paste this into your ${esc(agent.name)} conversation.</p><div class="prompt-text" id="prompt-text">${esc(fillTemplate(playbook.prompt, answers))}</div>${risk}</section>
-      <section class="output-block" aria-labelledby="schedule-heading"><div class="block-heading"><h2 id="schedule-heading"><span class="block-number">02</span> Recommended schedule</h2><button class="button copy-button" type="button" data-copy="schedule" aria-label="Copy recommended schedule">${icon('copy')} Copy</button></div><p class="schedule-text" id="schedule-text">${esc(playbook.schedule)}</p>${risk}<p class="block-instruction schedule-context">Your prompt requests updates every ${esc(answers.frequency)}. ${answers.frequency !== playbook.defaultFrequency ? 'This differs from the recommendation above. ' : ''}Confirm the final cadence, exact time, and time zone in ${esc(agent.name)}.</p></section>
+      <section class="output-block" aria-labelledby="schedule-heading"><div class="block-heading"><h2 id="schedule-heading"><span class="block-number">02</span> Recommended schedule</h2><button class="button copy-button" type="button" data-copy="schedule" aria-label="Copy recommended schedule">${icon('copy')} Copy</button></div><p class="schedule-text" id="schedule-text">${esc(playbook.schedule)}</p>${risk}<p class="block-instruction schedule-context">${playbook.defaultFrequency === null ? `Run this whenever you need it. There is nothing to schedule in ${esc(agent.name)}.` : `Your prompt requests updates every ${esc(answers.frequency)}. ${answers.frequency !== playbook.defaultFrequency ? 'This differs from the recommendation above. ' : ''}Confirm the final cadence, exact time, and time zone in ${esc(agent.name)}.`}</p></section>
       <section class="output-block" aria-labelledby="guardrails-heading"><div class="block-heading"><h2 id="guardrails-heading"><span class="block-number">03</span> Guardrails checklist</h2><button class="button copy-button" type="button" data-copy="guardrails" aria-label="Copy guardrails checklist">${icon('copy')} Copy</button></div><ul class="guardrails">${checklist.map((item, index) => `<li><label><input type="checkbox" name="review-${index}"><span>${esc(item)}</span></label></li>`).join('')}</ul>${risk}<p class="block-instruction">Check these as you review. Your checks stay on this screen.</p></section>
       <div id="copy-fallback" class="manual-copy" hidden><label for="manual-copy">Copy manually</label><p>Automatic copying is unavailable in this browser. Select and copy the text below.</p><textarea id="manual-copy" rows="6" readonly></textarea></div>
     </div><aside class="handoff"><h2>Next stop: ${esc(agent.name)}</h2><ol>${agent.setupSteps.map((step) => `<li>${esc(step)}</li>`).join('')}</ol><a class="button primary" href="${esc(agent.setupUrl)}" target="_blank" rel="noopener noreferrer">Open setup guide ${icon('external')}<span class="sr-only"> (opens in new tab)</span></a><div class="delivery-note"><h3>Delivery: ${esc(channel.label)}</h3><p>${esc(channel.hint || '')}</p></div><p class="small muted">Nothing has been connected or scheduled by nuntio.</p></aside></div></div>`;

@@ -3,19 +3,30 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A static, browser-only playbook generator. Tell your bot what to do.",
+  "description": "Nuntio: playbooks, a read only scanner and setup guides for your own AI agent, plus a small research only API.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
+    "check-secrets": "node scripts/check-secrets.mjs",
+    "start": "node server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
     "validate": "node scripts/validate.mjs",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "build:vercel": "npm run build && node scripts/copy-to-public.mjs"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "@axe-core/playwright": "4.11.0",
+    "@types/node": "22.20.5",
     "esbuild": "0.25.12",
     "playwright": "1.56.1",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.6",
+    "hono": "4.13.17"
   }
 }

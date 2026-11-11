@@ -6,9 +6,46 @@ A small, static playbook generator for beginners using Grok Bot, with a read-onl
 
 The complete production site is in [`dist/`](dist/). Source is in [`src/`](src/); playbooks and assistant configuration live in [`src/data/playbooks.json`](src/data/playbooks.json), setup guides in [`src/data/guides.json`](src/data/guides.json), chains in [`src/data/chains.json`](src/data/chains.json), and scan prompts in [`src/data/scan.json`](src/data/scan.json). Playbook generation stays in the browser. Scan makes read-only JSON-RPC API calls directly to the selected chain's public provider and, on failure, one distinct fallback. Those providers receive the address being scanned. There are no external runtime dependencies, keys, cookies, analytics, wallet connectors, database or backend. Publication is handled after submission under the name **nuntio**.
 
-This update adds **New launch radar**, **Tokenized stock watch**, **Unlock and airdrop tracker**, **Project research brief** and **Crypto creator thread writer**, bringing the catalog to nine playbooks. Their prompts keep the supplied wording and safety lines. Scan now produces the requested 10-swap **TRADER PROFILE** prompt with a **Save profile** action. Optional creator attribution and copyable tip addresses are supported; no author or recipient is populated. The roadmap puts all five playbooks in Live, the nuntio data engine and creator submissions in Next, and the nuntio token and paid playbooks in Exploring.
+The catalog has eleven playbooks, including **X growth sprint** and the on demand **Match research**. The roadmap lists everything that exists under Live automatically; Next, Later and Exploring come from [`src/data/roadmap.json`](src/data/roadmap.json).
 
-## Install, build, and preview
+## Run it
+
+You need Node.js 22 or later.
+
+```sh
+npm ci                # install packages
+npm run build         # build the static site into dist/
+npm test              # unit tests
+npm run typecheck     # type checks
+npm run check-secrets # make sure no keys or .env files would be committed
+npm run dev           # start the server on http://localhost:3000 (restarts on changes)
+```
+
+The server (in [`server/`](server/)) serves the site from `dist/` and a small JSON API under `/api`. Right now the API has one route, `GET /api/health`. It is research only: there are no wallet, signing, trading or custody routes.
+
+**Settings.** Copy [`.env.example`](.env.example) to `.env` for local use. On a host, set the same names as environment variables in its dashboard. API keys and passwords live only there, never in code, the repo or logs. The server refuses to start with a bad setting and never prints secret values. `.env` is ignored by git, and `npm run check-secrets` fails if one is about to be committed.
+
+**CI.** Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml): secret check, type checks, unit tests, a build, a check that `dist/` matches the source, and a server health check.
+
+**Cost per request.** The server makes no paid API calls yet, so each request costs only hosting. Paid data providers come in later phases; their cost per call will be documented here before they are used.
+
+**Hosting: Vercel.** How it fits together:
+
+- [`app.js`](app.js) at the root is the Vercel entrypoint. Vercel runs it as a Function that answers `/api/*`.
+- The static site is served by Vercel's CDN from `public/`. [`vercel.json`](vercel.json) sets the build command to `npm run build:vercel`, which builds `dist/` and copies it to `public/`. `public/` is generated at deploy time and ignored by git. Source images live in [`brand/`](brand/).
+- `dist/` stays in the repo as the source of truth and the IPFS export.
+
+To deploy for the first time:
+
+1. Sign in at vercel.com with GitHub and choose **Add New Project**, then import the `nuntio` repository.
+2. Leave the framework and build settings as Vercel detects them; `vercel.json` supplies the build command.
+3. Add environment variables from `.env.example` under **Settings, Environment Variables** when a phase needs them (none are needed yet).
+4. Deploy. Every push then gets a preview link, and the main branch goes to production.
+5. Check `https://<your project>.vercel.app/api/health` answers `{"status":"ok",...}`.
+
+`npm start` runs the same server on any other Node host, serving `dist/` itself.
+
+## Install, build, and preview (original IMD notes)
 
 Requires Node.js 22 or later and npm. Tooling is installed outside the repository so dependency and cache directories cannot enter the submission. No ignore file was added or changed.
 
@@ -95,13 +132,13 @@ Provider text and commands follow the assignment. The current OKX page recommend
 1. Copy an object in `playbooks` in `src/data/playbooks.json`.
 2. Give it a unique lowercase, hyphenated `id`, a `title`, short `description`, `category`, and an existing `agentId`. The ID becomes the exported folder name.
 3. Add `keywords`. Matching is case-insensitive, normalizes accents and punctuation, and matches complete words or phrases. A matched phrase scores its word count; results are sorted by total score with catalog order breaking ties. The top three positive matches are shown. No match means an honest empty state with a clear-all action, not an invented playbook.
-4. Set `deliverables`, `icon`, and `defaultFrequency`. The existing icons are `radar`, `pen`, `briefcase`, `shield`, and `clock`; an unknown name uses `radar`. The default frequency must occur in the catalog’s `frequencies` choices.
-5. Define additional text `questions`, each with a lowercase alphabetic `key`, visible `label`, example `placeholder`, `hint`, and integer `maxLength` from 1 to 500. The three standard keys are `experience`, `frequency`, and `channel`; do not duplicate them.
+4. Set `deliverables`, `icon`, and `defaultFrequency`. The existing icons are `radar`, `pen`, `briefcase`, `shield`, and `clock`; an unknown name uses `radar`. The default frequency must occur in the catalog’s `frequencies` choices. Use `null` for an on demand playbook: the form then skips the frequency question and the prompt must not contain `{frequency}`.
+5. Define additional text `questions`, each with a `key` that starts with a lowercase letter and contains only letters (for example `goal` or `hoursPerDay`), visible `label`, example `placeholder`, `hint`, and integer `maxLength` from 1 to 500. The three standard keys are `experience`, `frequency`, and `channel`; do not duplicate them. Channel is always asked. Experience is asked only when the prompt contains `{experience}`, and frequency only when `defaultFrequency` is set.
 6. Write a `prompt` with `{experience}`, `{frequency}`, `{channel}`, and the question keys as placeholders. Every question must have a matching placeholder, and every placeholder must have a question. Repeated placeholders are allowed. Substitution is literal and single-pass; answers cannot execute HTML or recursively expand other placeholders.
 7. Set `schedule` and `guardrails`. Use `checklistSeparator: ", "` only if commas separate distinct checklist items, otherwise `null` for a single item. Copying always preserves the original guardrails string, including punctuation.
 8. Set `riskWarning` to an appropriate plain warning ending in `Not financial advice.` when an additional financial warning is needed. Warnings are displayed and appended, after a blank line, to **each** copied block. Use `null` for unrelated topics or an exact supplied prompt that already contains its required safety ending. The five playbooks in this update use `null` so their copied prompts stay exactly as requested; the first four include the full shared safety line, and the thread writer keeps its own ending.
 9. Optionally add `author` and/or `tipAddress` using the creator fields described below. Leave them out until the creator supplies the values; do not insert examples or recipient stand-ins.
-10. Run the typecheck, build, tests, and interaction validation. The new card, form, output, and static metadata page are generated automatically. If the playbook is listed on the roadmap, add its ID to `addedPlaybooks` in `renderRoadmap()` or its intended roadmap group.
+10. Run the typecheck, build, tests, and interaction validation. The new card, form, output, and static metadata page are generated automatically. Every playbook in the catalog appears under Live on the roadmap automatically. Planned items (Next, Later, Exploring) and the roadmap disclaimer live in [`src/data/roadmap.json`](src/data/roadmap.json).
 
 The original three prompt texts, schedules, and guardrails are preserved verbatim, alongside the requested perps funding digest. Unit fixtures lock their content. When adding another playbook, update the test’s catalog count and add appropriate tests without changing existing content fixtures. UI descriptions and help text are separate from those fixed templates.
 
