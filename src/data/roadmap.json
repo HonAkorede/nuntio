@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "next",
+      "title": "Next",
+      "icon": "clock",
+      "items": [
+        { "title": "Elysium launch feed and risk scan", "text": "A read only feed of new Elysium launches, with a transparent risk scan for each token." },
+        { "title": "Elysium setup guides", "text": "Step by step guides, added once official Elysium docs are published." }
+      ]
+    },
+    {
+      "id": "later",
+      "title": "Later",
+      "icon": "clock",
+      "items": [
+        { "title": "Creator submissions and paid playbooks", "text": "Creators submit playbooks for the library, and some playbooks may be paid." }
+      ]
+    },
+    {
+      "id": "exploring",
+      "title": "Exploring",
+      "icon": "radar",
+      "items": [
+        { "title": "Nuntio token", "text": "An idea under consideration only. Nothing is launched or for sale." }
+      ]
+    }
+  ],
+  "disclaimer": "Plans can change. Nothing here is a promise or financial advice. No token has been launched."
+}

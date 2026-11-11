@@ -1,0 +1,4 @@
+# Store and check out text files with LF line endings on every computer,
+# so a build on Windows produces the same dist files as a build on Linux.
+* text=auto eol=lf
+*.png binary

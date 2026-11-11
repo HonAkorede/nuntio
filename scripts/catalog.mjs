@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { PLACEHOLDER, standardFields } from '../src/model.js';
 
 /** Fail the build on an incomplete data-only extension. */
 export function validateCatalog(catalog) {
@@ -27,16 +28,16 @@ export function validateCatalog(catalog) {
     assert.ok(agents.has(playbook.agentId), 'Unknown assistant');
     assert.ok(playbook.title && playbook.description && playbook.category && playbook.icon && playbook.deliverables.length);
     assert.ok(playbook.keywords.length && playbook.schedule && playbook.guardrails);
-    assert.ok(catalog.frequencies.some((option) => option.value === playbook.defaultFrequency));
-    const fields = new Set(['experience', 'frequency', 'channel']);
+    if (playbook.defaultFrequency !== null) assert.ok(catalog.frequencies.some((option) => option.value === playbook.defaultFrequency), `Unknown default frequency: ${playbook.id}`);
+    const fields = new Set(standardFields(playbook));
     for (const question of playbook.questions) {
-      assert.match(question.key, /^[a-z]+$/);
-      assert.ok(!fields.has(question.key), 'Duplicate question');
+      assert.match(question.key, /^[a-z][A-Za-z]*$/);
+      assert.ok(!fields.has(question.key) && !['experience', 'frequency', 'channel'].includes(question.key), 'Duplicate question');
       fields.add(question.key);
       assert.ok(question.label && question.placeholder && question.hint);
       assert.ok(Number.isInteger(question.maxLength) && question.maxLength > 0 && question.maxLength <= 500);
     }
-    const placeholders = [...playbook.prompt.matchAll(/\{([a-z]+)\}/g)].map((match) => match[1]);
+    const placeholders = [...playbook.prompt.matchAll(PLACEHOLDER)].map((match) => match[1]);
     assert.deepEqual(new Set(placeholders), fields, `Questions and template placeholders differ: ${playbook.id}`);
     assert.ok(playbook.checklistSeparator === null || typeof playbook.checklistSeparator === 'string');
     if (playbook.riskWarning) assert.ok(playbook.riskWarning.includes('Not financial advice.'));
@@ -47,4 +48,15 @@ export function validateCatalog(catalog) {
       assert.ok(!/[\u0000-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/.test(playbook[field]), `${field} must be plain, single-line text: ${playbook.id}`);
     }
   }
+}
+
+/** Roadmap groups are plans only; Live is generated from the real catalogs in the app. */
+export function validateRoadmap(roadmap) {
+  assert.equal(roadmap.version, 1, 'Unsupported roadmap version');
+  assert.deepEqual(roadmap.groups.map(({ id }) => id), ['next', 'later', 'exploring'], 'Roadmap groups must be next, later and exploring');
+  for (const group of roadmap.groups) {
+    assert.ok(group.title && group.icon && group.items.length, `Incomplete roadmap group: ${group.id}`);
+    for (const item of group.items) assert.ok(item.title && item.text, `Incomplete roadmap item in ${group.id}`);
+  }
+  assert.ok(roadmap.disclaimer.includes('No token has been launched.'), 'Keep the roadmap disclaimer');
 }

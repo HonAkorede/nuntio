@@ -16,7 +16,7 @@ const exactContent = [
 ];
 
 test('the three supplied prompt templates, schedules, and guardrails stay verbatim', () => {
-  assert.equal(catalog.playbooks.length, 9);
+  assert.equal(catalog.playbooks.length, 11);
   catalog.playbooks.slice(0, 3).forEach((playbook, index) => {
     assert.equal(createHash('sha256').update(playbook.prompt).digest('hex'), exactContent[index][0]);
     assert.equal(playbook.schedule, exactContent[index][1]);

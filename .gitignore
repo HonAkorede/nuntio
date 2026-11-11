@@ -1,0 +1,19 @@
+# Installed packages and caches
+node_modules/
+.npm/
+
+# Local settings and secrets. Only the example file is committed.
+.env
+.env.*
+!.env.example
+
+# Vercel copy of dist, made at deploy time by npm run build:vercel
+public/
+.vercel/
+
+# Disposable test output
+test/scratch/
+
+# Personal editor and Claude settings
+.claude/settings.local.json
+.DS_Store
