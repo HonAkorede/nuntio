@@ -43,12 +43,21 @@ test('the static site is served from dist, including folder index pages', async 
   assert.equal((await app.request('/../package.json')).status, 404);
 });
 
-test('the Vercel entrypoint exports the API app and leaves static files to the CDN', async () => {
-  const { default: vercelApp } = await import('../app.js');
-  const health = await vercelApp.request('/api/health');
+test('the Vercel function answers /api routes and leaves static files to the CDN', async () => {
+  const api = await import('../api/index.js');
+  for (const method of ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) assert.equal(typeof api[method], 'function', method);
+  const health = await api.GET(new Request('https://example.test/api/health'));
   assert.equal(health.status, 200);
   assert.equal((await health.json()).version, VERSION);
-  assert.equal((await vercelApp.request('/')).status, 404, 'On Vercel, / is served from public/ by the CDN');
+  assert.equal((await api.POST(new Request('https://example.test/api/trade', { method: 'POST' }))).status, 404);
+  assert.equal((await api.GET(new Request('https://example.test/'))).status, 404, 'On Vercel, / is served from public/ by the CDN');
+});
+
+test('vercel.json sends /api to the function and serves the built site from public', () => {
+  const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.equal(vercel.framework, null);
+  assert.equal(vercel.outputDirectory, 'public');
+  assert.deepEqual(vercel.rewrites, [{ source: '/api/(.*)', destination: '/api' }]);
 });
 
 test('server version matches package.json', () => {
