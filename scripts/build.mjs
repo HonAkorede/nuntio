@@ -28,7 +28,9 @@ await build({ entryPoints: [resolve(project, 'src/styles.css')], outfile: resolv
 
 const escape = (text) => text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const homeTitle = 'nuntio — Tell your bot what to do.';
-const homeDescription = 'Playbooks for Grok Bot, a read-only address scanner for Ethereum, Base, BNB Chain, Robinhood Chain and Solana, and wallet setup guides. Choose a goal, copy a prompt, and work with your agent step by step.';
+const chainLabels = chainCatalog.chains.map(({ label }) => label);
+const chainList = `${chainLabels.slice(0, -1).join(', ')} and ${chainLabels.at(-1)}`;
+const homeDescription = `Playbooks for Grok Bot, a read-only address scanner for ${chainList}, and wallet setup guides. Choose a goal, copy a prompt, and work with your agent step by step.`;
 function page(playbook, guide) {
   const base = playbook || guide ? '../../' : './';
   const title = guide ? `${guide.title} setup | nuntio` : playbook ? `${playbook.title} | nuntio` : homeTitle;
