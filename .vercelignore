@@ -1,0 +1,8 @@
+# Never upload these from a local deploy. Vercel installs packages itself.
+node_modules
+.env
+.env.*
+!.env.example
+.claude
+public
+test/scratch

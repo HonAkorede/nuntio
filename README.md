@@ -31,14 +31,14 @@ The server (in [`server/`](server/)) serves the site from `dist/` and a small JS
 
 **Hosting: Vercel.** How it fits together:
 
-- [`app.js`](app.js) at the root is the Vercel entrypoint. Vercel runs it as a Function that answers `/api/*`.
+- [`api/index.js`](api/index.js) is a Vercel Function. [`vercel.json`](vercel.json) sends every `/api/*` request to it, and it runs the same Hono app as `npm start`.
 - The static site is served by Vercel's CDN from `public/`. [`vercel.json`](vercel.json) sets the build command to `npm run build:vercel`, which builds `dist/` and copies it to `public/`. `public/` is generated at deploy time and ignored by git. Source images live in [`brand/`](brand/).
 - `dist/` stays in the repo as the source of truth and the IPFS export.
 
 To deploy for the first time:
 
 1. Sign in at vercel.com with GitHub and choose **Add New Project**, then import the `nuntio` repository.
-2. Leave the framework and build settings as Vercel detects them; `vercel.json` supplies the build command.
+2. Leave the build settings as they are. `vercel.json` sets the framework to none (Other), the build command and the `public` output folder, so the preset shown in the dashboard does not matter.
 3. Add environment variables from `.env.example` under **Settings, Environment Variables** when a phase needs them (none are needed yet).
 4. Deploy. Every push then gets a preview link, and the main branch goes to production.
 5. Check `https://<your project>.vercel.app/api/health` answers `{"status":"ok",...}`.
