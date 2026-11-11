@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "chain": "elysium",
+  "verifiedAt": "2026-11-11",
+  "note": "Only contracts published in a project's own official docs. Each was checked against developers.uniswap.org/deployments.json (chain 99901) and confirmed to hold contract code on Elysium. Never add a bridge address here.",
+  "baseTokens": {
+    "note": "Pairing tokens, so the other side of a pool is shown as the new token. From the Key contracts table at https://elysium.kinetiq.xyz/docs/contract-addresses (checked 2026-11-11). 0x0 is native HYPE in Uniswap v4.",
+    "addresses": [
+      "0x0000000000000000000000000000000000000000",
+      "0xba876237b0f021a6c6d852d6c26e107997cc5e81",
+      "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65"
+    ]
+  },
+  "sources": [
+    {
+      "id": "uniswap-v2",
+      "label": "Uniswap v2",
+      "address": "0xbbbcc62853a5fa27b93d6bab3e6f7ce841e25df2",
+      "event": "PairCreated(address indexed token0, address indexed token1, address pair, uint256)",
+      "topic": "0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9",
+      "docs": "https://developers.uniswap.org/docs/protocols/v2/deployments"
+    },
+    {
+      "id": "uniswap-v3",
+      "label": "Uniswap v3",
+      "address": "0x1707327f626496a7b5b3872e7e4d2879df7d7a9f",
+      "event": "PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)",
+      "topic": "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118",
+      "docs": "https://developers.uniswap.org/docs/protocols/v3/deployments/v3-elysium-deployments"
+    },
+    {
+      "id": "uniswap-v4",
+      "label": "Uniswap v4",
+      "address": "0xe2e105d3f7209a9da11f83ccf3e7398a753823f1",
+      "event": "Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)",
+      "topic": "0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438",
+      "docs": "https://developers.uniswap.org/docs/protocols/v4/deployments"
+    }
+  ]
+}

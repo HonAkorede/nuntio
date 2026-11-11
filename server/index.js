@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
 import { createApp } from './app.js';
+import { feedFromEnv } from './feed/config.js';
 import { ConfigError, loadEnv } from './env.js';
 import { VERSION as version } from './version.js';
 
@@ -12,7 +13,7 @@ try {
   if (error instanceof ConfigError) { console.error(`Settings problem: ${error.message}`); process.exit(1); }
   throw error;
 }
-const app = createApp({ distDir: fileURLToPath(new URL('../dist/', import.meta.url)), version });
+const app = createApp({ distDir: fileURLToPath(new URL('../dist/', import.meta.url)), version, feed: feedFromEnv(config) });
 const server = serve({ fetch: app.fetch, port: config.port }, ({ port }) => {
   console.log(`Nuntio server ${version} on http://localhost:${port}`);
   console.log(`Settings: ${config.summary()}`);

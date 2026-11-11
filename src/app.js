@@ -4,6 +4,7 @@ import rawChains from './data/chains.json';
 import rawRoadmap from './data/roadmap.json';
 import { createGuidePrompt, guideDate } from './guide-model.js';
 import { createScanView } from './scan-view.js';
+import { createLaunchesView } from './launches-view.js';
 import { agentFor, answerHash, standardFields, createOutputs, defaultsFor, escapeHTML as esc, fillTemplate, matchPlaybooks, parseRoute, readAnswers, validateAnswers } from './model.js';
 
 /** @typedef {import('./types').Playbook} Playbook */
@@ -69,7 +70,7 @@ function shell() {
   header.innerHTML = `<div class="header-inner wrap">
     <a class="brand" href="${homeHref()}" aria-label="nuntio home"><svg width="31" height="31" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 26V6h4l14 20h4V6h-5v13L13 6H5" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/></svg><span>nuntio</span></a>
     <nav aria-label="Main navigation"><a class="nav-link" href="${homeHref('/guide')}">How it works</a><a class="nav-link docs-link" href="${esc(defaultAgent.docsUrl)}" target="_blank" rel="noopener noreferrer">${esc(defaultAgent.name)} docs ${icon('external')}<span class="sr-only"> (opens in new tab)</span></a></nav>
-  </div><nav class="site-tabs wrap" aria-label="nuntio sections"><a href="${homeHref()}" data-section="playbooks">Playbooks</a><a href="${homeHref('/scan')}" data-section="scan">Scan</a><a href="${homeHref('/guides')}" data-section="guides">Setup guides</a><a href="${homeHref('/roadmap')}" data-section="roadmap">Roadmap</a></nav>`;
+  </div><nav class="site-tabs wrap" aria-label="nuntio sections"><a href="${homeHref()}" data-section="playbooks">Playbooks</a><a href="${homeHref('/scan')}" data-section="scan">Scan</a><a href="${homeHref('/launches')}" data-section="launches">Launches</a><a href="${homeHref('/guides')}" data-section="guides">Setup guides</a><a href="${homeHref('/roadmap')}" data-section="roadmap">Roadmap</a></nav>`;
   const footer = /** @type {HTMLElement} */ (document.querySelector('#site-footer'));
   footer.innerHTML = `<div class="footer-inner wrap"><p>Research and instructions only. nuntio never trades, connects a wallet or signs anything. Not financial advice.</p><div><span>Independent of xAI</span><a href="${homeHref('/guide')}">About & privacy</a></div></div>`;
 }
@@ -367,7 +368,7 @@ function render() {
   const route = parseRoute(location.hash);
   const playbook = catalog.playbooks.find(({ id }) => id === pageId);
   const setupGuide = guideCatalog.guides.find(({ id }) => id === (guideId || route.view.replace(/^\/guides\//, '')));
-  const section = guideId || route.view === '/guides' || route.view.startsWith('/guides/') ? 'guides' : route.view === '/roadmap' ? 'roadmap' : route.view.startsWith('/scan') ? 'scan' : 'playbooks';
+  const section = guideId || route.view === '/guides' || route.view.startsWith('/guides/') ? 'guides' : route.view === '/roadmap' ? 'roadmap' : route.view === '/launches' ? 'launches' : route.view.startsWith('/scan') ? 'scan' : 'playbooks';
   document.querySelectorAll('[data-section]').forEach((link) => {
     if (/** @type {HTMLElement} */ (link).dataset.section === section) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
@@ -385,6 +386,7 @@ function render() {
   else if (route.view === '/guide') renderGuide();
   else if (route.view === '/guides') renderGuides();
   else if (route.view === '/roadmap') renderRoadmap();
+  else if (route.view === '/launches') launchesView.renderLaunches();
   else if (route.view === '/scan') scanView.renderScan(route.params);
   else if (route.view === '/scan/output') { if (!scanView.renderSaved(route.params)) renderNotFound(); }
   else if (route.view.startsWith('/guides/') && setupGuide) renderSetupGuide(setupGuide);
@@ -398,6 +400,7 @@ function render() {
 }
 
 const scanView = createScanView({ app, icon, copy, announce, esc });
+const launchesView = createLaunchesView({ app, icon, announce, esc, homeHref });
 shell();
 window.addEventListener('hashchange', render);
 document.querySelector('#skip-link')?.addEventListener('click', (event) => { event.preventDefault(); app.focus(); app.scrollIntoView(); });
