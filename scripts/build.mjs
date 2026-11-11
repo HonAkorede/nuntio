@@ -43,7 +43,7 @@ function page(playbook, guide) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111310">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${connect}; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ${connect}; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>${escape(title)}</title>
   <meta name="description" content="${escape(description)}">
   <link rel="icon" type="image/svg+xml" href="${base}assets/favicon.svg">

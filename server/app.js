@@ -2,12 +2,13 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { VERSION } from './version.js';
+import { registerFeedRoutes } from './feed/routes.js';
 
 /** The Nuntio server: a small JSON API under /api, plus the existing static site from dist/.
  * It is research only. There are no wallet, signing, trading or custody routes, by design.
  * On Vercel the site is served by its CDN from public/, so distDir is left out there.
- * @param {{ distDir?: string, version?: string }} [options] */
-export function createApp({ distDir, version = VERSION } = {}) {
+ * @param {{ distDir?: string, version?: string, feed?: Parameters<typeof registerFeedRoutes>[1] }} [options] */
+export function createApp({ distDir, version = VERSION, feed } = {}) {
   const app = new Hono();
 
   // Browser security headers. Each HTML page also carries its own Content Security Policy.
@@ -17,6 +18,7 @@ export function createApp({ distDir, version = VERSION } = {}) {
     c.header('Cache-Control', 'no-store');
     return c.json({ status: 'ok', service: 'nuntio', version });
   });
+  if (feed) registerFeedRoutes(app, feed);
   app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404));
 
   // Static site (local and non Vercel hosts): hashed routes live after the #, so plain file serving is enough.

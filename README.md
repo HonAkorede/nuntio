@@ -27,7 +27,25 @@ The server (in [`server/`](server/)) serves the site from `dist/` and a small JS
 
 **CI.** Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml): secret check, type checks, unit tests, a build, a check that `dist/` matches the source, and a server health check.
 
-**Cost per request.** The server makes no paid API calls yet, so each request costs only hosting. Paid data providers come in later phases; their cost per call will be documented here before they are used.
+**Cost per request.** The server uses no paid data providers. It reads the official public Elysium RPC (free, shared by everyone, rate limited) and a Neon Postgres database on the free plan. Every run records its RPC requests in the `rpc_usage` table.
+
+| Route | Who calls it | RPC requests | Database |
+| --- | --- | --- | --- |
+| `GET /api/health` | Anyone | 0 | 0 |
+| `GET /api/cron/index` | Vercel Schedule every 15 minutes, with `CRON_SECRET` | At most 60 (a live 7 minute window used 17) | A few queries |
+| `GET /api/launches` | The Launches tab | 0 | 2 queries; cached at the CDN for 30 seconds; 60 per minute per visitor |
+| `POST /api/launches/refresh` | The "Check for new launches" button | 0 when the feed is under 3 minutes old, otherwise at most 15 | A few queries; once a minute per visitor |
+
+## Elysium launch feed
+
+The Launches tab lists new Uniswap pools on Elysium. [`src/data/launch-sources.json`](src/data/launch-sources.json) holds the only sources: the Uniswap v2, v3 and v4 contracts that Uniswap publishes for Elysium (chain 99901), plus the pairing tokens (HYPE, WHYPE, USDC) from Kinetiq's official contract list, so the other side of a pool is shown as the new token. Add a launchpad only when its own official docs publish its Elysium contracts, and never add a bridge address.
+
+- [`server/feed/indexer.js`](server/feed/indexer.js) reads pool creation events in block ranges, checks every field, stores launches in Postgres and remembers where it stopped. It splits a range that returns too many events, retries rate limited lookups once, stops cleanly at its request budget, and keeps 14 days.
+- Block times and deployers (the wallet that sent the creating transaction) come from batched lookups. Token name, symbol, decimals and supply come from one Multicall3 request per 50 tokens. Anything that cannot be read stays empty and is never guessed.
+- Token names and symbols are untrusted chain data: they are cleaned, shown only as plain text and never passed to an AI as instructions. No owner of a wallet is guessed or shown.
+- Uniswap v4 hooks are shown as addresses because no official source names them. A v4 fee of `dynamic` means the hook sets the fee.
+
+**Setup on Vercel.** Add Neon from the project's Storage tab (it sets `DATABASE_URL`) and add a `CRON_SECRET` of at least 16 random characters under Settings, Environment Variables, then redeploy. The tables are created on first use. The schedule is defined in [`vercel.json`](vercel.json) (`schedules`, every 15 minutes, Hobby plan; Vercel does not retry a failed run, the next run catches up).
 
 **Hosting: Vercel.** How it fits together:
 

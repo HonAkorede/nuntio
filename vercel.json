@@ -4,16 +4,38 @@
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    }
   ],
+  "schedules": {
+    "index-launches": {
+      "schedule": "*/15 * * * *",
+      "path": "/api/cron/index",
+      "requestMethod": "GET"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "no-referrer" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Strict-Transport-Security", "value": "max-age=15552000; includeSubDomains" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=15552000; includeSubDomains"
+        }
       ]
     }
   ]

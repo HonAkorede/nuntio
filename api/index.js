@@ -3,8 +3,10 @@
 // The static site is served separately by Vercel's CDN from public/.
 // For local use and other hosts, run `npm run dev` or `npm start` (server/index.js).
 import { createApp } from '../server/app.js';
+import { loadEnv } from '../server/env.js';
+import { feedFromEnv } from '../server/feed/config.js';
 
-const app = createApp();
+const app = createApp({ feed: feedFromEnv(loadEnv()) });
 
 /** @param {Request} request */
 const handle = (request) => app.fetch(request);

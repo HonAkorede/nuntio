@@ -407,3 +407,22 @@ input[aria-invalid="true"] { border-color: var(--color-error); }
   .button, .playbook-card, .setup-card { border: 1px solid ButtonText; }
   .site-tabs a[aria-current="page"] { border-color: Highlight; }
 }
+
+/* Launches tab */
+.launch-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-block: 24px; color: var(--color-muted); font-size: var(--text-small); }
+.launch-status p { margin: 0; }
+.launch-list { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 16px; }
+.launch-card { border: 1px solid var(--color-border); border-radius: var(--radius-surface); background: var(--color-surface); padding: 20px; min-width: 0; }
+.launch-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.launch-top h2 { margin: 0; font-size: var(--text-title); overflow-wrap: anywhere; }
+.launch-top time { color: var(--color-muted); font-size: var(--text-small); white-space: nowrap; }
+.launch-name { margin: 4px 0 0; color: var(--color-muted); font-size: var(--text-small); overflow-wrap: anywhere; }
+.launch-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 24px; margin: 16px 0; font-size: var(--text-small); }
+.launch-facts div { min-width: 0; }
+.launch-facts dt { color: var(--color-muted); margin-bottom: 2px; }
+.launch-facts dd { margin: 0; overflow-wrap: anywhere; }
+.launch-facts .muted { color: var(--color-muted); }
+.launch-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.launch-actions .text-link { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text); font-size: var(--text-small); }
+.launch-empty { color: var(--color-muted); }
+.launch-sources { margin-top: 24px; line-height: 1.6; }
