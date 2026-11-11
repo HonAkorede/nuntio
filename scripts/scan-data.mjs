@@ -10,8 +10,10 @@ export function validateScanData(chains, scan) {
     ids.add(chain.id);
     assert.ok(['evm', 'solana'].includes(chain.kind), `Unknown chain kind: ${chain.id}`);
     assert.ok(chain.label && chain.nativeSymbol && Number.isInteger(chain.nativeDecimals));
-    assert.equal(chain.rpc.length, 2, `${chain.id}: give a main RPC and one fallback`);
-    assert.equal(new Set(chain.rpc.map((url) => new URL(url).href)).size, 2, `${chain.id}: main and fallback RPCs must be distinct`);
+    if (chain.kind === 'evm') assert.ok(Number.isInteger(chain.chainId) && chain.chainId > 0, `${chain.id}: EVM chains need their documented numeric chainId`);
+    // One official RPC is allowed when the chain documents no public fallback; never more than two.
+    assert.ok([1, 2].includes(chain.rpc.length), `${chain.id}: give a main RPC and at most one fallback`);
+    assert.equal(new Set(chain.rpc.map((url) => new URL(url).href)).size, chain.rpc.length, `${chain.id}: main and fallback RPCs must be distinct`);
     for (const url of [...chain.rpc, ...chain.rpcSources]) assert.equal(new URL(url).protocol, 'https:', `${chain.id}: RPCs and sources must use HTTPS`);
     assert.ok(chain.rpcSources.length, `${chain.id}: record where the RPC is documented`);
     for (const key of ['address', 'token']) {

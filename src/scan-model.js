@@ -40,7 +40,7 @@ export function validateAddress(kind, raw) {
     if (!looksEvm && base58Decode(address)?.length === 32) return { ok: false, error: 'This looks like a Solana address. Choose Solana, or enter a 0x address with 40 hex characters.' };
     return { ok: false, error: 'Use a 0x address with 40 hex characters (0-9, a-f).' };
   }
-  if (looksEvm) return { ok: false, error: 'This looks like an EVM address. Choose Ethereum, Base, BNB Chain or Robinhood Chain.' };
+  if (looksEvm) return { ok: false, error: 'This looks like an EVM address. Choose an EVM chain, such as Ethereum, Base or Elysium.' };
   if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address) && base58Decode(address)?.length === 32) return { ok: true, address };
   return { ok: false, error: 'Use a Solana address: 32 to 44 base58 characters, with no 0, O, I or l.' };
 }

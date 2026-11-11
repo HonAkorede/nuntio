@@ -17,12 +17,36 @@ const abiString = (text) => { const hex = Buffer.from(text).toString('hex'); ret
 
 test('chain and scan catalogs are complete', () => validateScanData(chains, scan));
 
-test('catalog rejects missing and duplicate fallback endpoints, including URL-normalized duplicates', () => {
-  for (const rpc of [['https://rpc.example.com'], ['https://rpc.example.com', 'https://rpc.example.com'], ['https://rpc.example.com', 'https://rpc.example.com/']]) {
+test('catalog rejects empty, oversized and duplicate endpoint lists, including URL-normalized duplicates', () => {
+  for (const rpc of [[], ['https://a.example.com', 'https://b.example.com', 'https://c.example.com'], ['https://rpc.example.com', 'https://rpc.example.com'], ['https://rpc.example.com', 'https://rpc.example.com/']]) {
     const invalid = structuredClone(chains);
     invalid.chains[0].rpc = rpc;
     assert.throws(() => validateScanData(invalid, scan), /fallback/);
   }
+});
+
+test('a chain with one official RPC is valid, and a failed read reports an error with no fallback', async () => {
+  const single = structuredClone(chains);
+  single.chains[0].rpc = ['https://rpc.example.com'];
+  validateScanData(single, scan);
+  const ely = chain('elysium');
+  assert.deepEqual(ely.rpc, ['https://rpc.elysium.kinetiq.xyz']);
+  const down = fakeFetch({ [ely.rpc[0]]: () => new Response('down', { status: 503 }) });
+  await assert.rejects(scanAddress(ely, '0x1111111111111111111111111111111111111111', down.fetcher), ReadError);
+  assert.equal(new Set(down.calls.map(({ url }) => url)).size, 1);
+});
+
+test('Elysium uses the details from the official Kinetiq docs and explorer', async () => {
+  const ely = chain('elysium');
+  assert.equal(ely.chainId, 99901);
+  assert.equal(ely.nativeSymbol, 'HYPE');
+  assert.equal(ely.nativeDecimals, 18);
+  assert.equal(ely.explorer.address, 'https://elysium.kinetiq.xyz/address/{address}');
+  assert.equal(ely.explorer.token, 'https://elysium.kinetiq.xyz/token/{address}');
+  assert.ok(ely.rpcSources.includes('https://elysium.kinetiq.xyz/docs/connecting-to-elysium'));
+  const wallet = await scanAddress(ely, '0x1111111111111111111111111111111111111111', fakeFetch({ [ely.rpc[0]]: (method) => ({ result: method === 'eth_getCode' ? '0x' : '0xde0b6b3a7640000' }) }).fetcher);
+  assert.equal(wallet.balance, '1 HYPE');
+  assert.equal(validateAddress('solana', '0x1111111111111111111111111111111111111111').ok, false);
 });
 
 test('the requested prompt templates stay verbatim', () => {

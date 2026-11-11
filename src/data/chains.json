@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "verifiedAt": "2026-10-29",
+  "verifiedAt": "2026-11-11",
   "chains": [
     {
       "id": "ethereum",
@@ -45,6 +45,17 @@
       "rpc": ["https://rpc.mainnet.chain.robinhood.com", "https://robinhood-rpc.publicnode.com"],
       "rpcSources": ["https://docs.robinhood.com/chain/connecting", "https://robinhood.publicnode.com/"],
       "explorer": { "name": "Blockscout", "address": "https://robinhoodchain.blockscout.com/address/{address}", "token": "https://robinhoodchain.blockscout.com/token/{address}" }
+    },
+    {
+      "id": "elysium",
+      "label": "Elysium",
+      "kind": "evm",
+      "chainId": 99901,
+      "nativeSymbol": "HYPE",
+      "nativeDecimals": 18,
+      "rpc": ["https://rpc.elysium.kinetiq.xyz"],
+      "rpcSources": ["https://elysium.kinetiq.xyz/docs/connecting-to-elysium"],
+      "explorer": { "name": "Elysium explorer", "address": "https://elysium.kinetiq.xyz/address/{address}", "token": "https://elysium.kinetiq.xyz/token/{address}" }
     },
     {
       "id": "solana",
